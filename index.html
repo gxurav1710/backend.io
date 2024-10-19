@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Barcode Scanner</title>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <style>
+        #video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" autoplay></video>
+    <script>
+        const codeReader = new ZXing.BrowserMultiFormatReader();
+        const videoElement = document.getElementById('video');
+
+        // Access camera and start video stream
+        codeReader
+            .decodeFromVideoDevice(null, videoElement, (result, err) => {
+                if (result) {
+                    const barcode = result.text;
+                    const productUrl = `https://world.openfoodfacts.org/product/${barcode}`;
+                    window.open(productUrl, '_blank'); // Open product URL in a new tab
+                }
+                if (err) {
+                    console.error(err);
+                }
+            });
+    </script>
+</body>
+</html>
