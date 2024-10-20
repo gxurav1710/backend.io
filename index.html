@@ -2,34 +2,149 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Barcode Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Barcode Scanner</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
+        body {
+            background-color: #545454;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px;
+            box-sizing: border-box;
+        }
         #video {
-            width: 100%;
+            width: 80%;  
+            max-width: 350px; 
             height: auto;
-            display: block;
+            border: 2px solid white;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            object-fit: cover; 
+        }
+        .button-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button, input[type="range"] {
+            padding: 12px 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            flex: 1 1 30%;
+            max-width: 150px;
+        }
+        button:hover {
+            background-color: #444;
+        }
+        input[type="range"] {
+            width: 80%;
+            margin: 10px 0;
+        }
+        .return-home {
+            margin-top: 20px;
+            background-color: #555;
         }
     </style>
 </head>
 <body>
-    <video id="video" autoplay></video>
+    <video id="video" autoplay playsinline></video>
+    <div class="button-container">
+        <button onclick="toggleCamera()">Toggle Camera</button>
+        <button onclick="toggleTorch()">Toggle Torch</button>
+        <button onclick="goToHistory()">History</button>
+    </div>
+    <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" onchange="setZoom(this.value)">
+    <button class="return-home" onclick="returnHome()">Return to Home</button>
     <script>
-        const codeReader = new ZXing.BrowserMultiFormatReader();
-        const videoElement = document.getElementById('video');
+        let codeReader = new ZXing.BrowserMultiFormatReader();
+        let videoElement = document.getElementById('video');
+        let currentFacingMode = "environment";
+        let track;
 
-        // Access camera and start video stream
-        codeReader
-            .decodeFromVideoDevice(null, videoElement, (result, err) => {
-                if (result) {
-                    const barcode = result.text;
-                    const productUrl = `https://world.openfoodfacts.org/product/${barcode}`;
-                    window.open(productUrl, '_blank'); // Open product URL in a new tab
-                }
-                if (err) {
-                    console.error(err);
-                }
-            });
+        async function startCamera(facingMode) {
+            try {
+                codeReader.reset();
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 60 }
+                    }
+                });
+                videoElement.srcObject = stream;
+                track = stream.getVideoTracks()[0];
+                codeReader.decodeFromVideoDevice(null, videoElement, handleDecode);
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+            }
+        }
+
+        function handleDecode(result) {
+            if (result) {
+                const barcode = result.text;
+                const productUrl = `https://world.openfoodfacts.org/product/${barcode}`;
+                window.location.href = productUrl; 
+                saveToHistory(barcode);
+            }
+        }
+
+        function toggleCamera() {
+            currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+            startCamera(currentFacingMode);
+        }
+
+        function toggleTorch() {
+            if (track && track.getCapabilities().torch) {
+                const torchStatus = track.getSettings().torch;
+                track.applyConstraints({
+                    advanced: [{ torch: !torchStatus }]
+                });
+            }
+        }
+
+        function setZoom(value) {
+            if (track) {
+                track.applyConstraints({
+                    advanced: [{ zoom: parseFloat(value) }]
+                }).then(() => {
+                    console.log(`Zoom set to ${value}`);
+                }).catch(err => {
+                    console.error("Error applying zoom:", err);
+                });
+            }
+        }
+
+        function saveToHistory(barcode) {
+            let history = JSON.parse(localStorage.getItem('scanHistory')) || [];
+            if (!history.includes(barcode)) {
+                history.push(barcode);
+                localStorage.setItem('scanHistory', JSON.stringify(history));
+            }
+        }
+
+        function goToHistory() {
+            window.location.href = 'history.html';
+        }
+
+        function returnHome() {
+            window.location.href = 'https://viewer.pandasuite.com/w9EkSFtT';
+        }
+
+        startCamera(currentFacingMode);
     </script>
 </body>
 </html>
