@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History</title>
+    <style>
+        body {
+            background-color: #545454;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .history-item {
+            background-color: #333;
+            border-radius: 5px;
+            margin: 10px 0;
+            padding: 10px;
+            transition: background-color 0.3s;
+        }
+        .history-item:hover {
+            background-color: #444;
+        }
+        a {
+            color: #00FF00;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .return-home {
+            margin-top: 20px;
+            background-color: #555;
+            padding: 12px 20px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .return-home:hover {
+            background-color: #444;
+        }
+    </style>
+</head>
+<body>
+    <h1>Scan History</h1>
+    <div id="historyContainer"></div>
+    <button class="return-home" onclick="returnHome()">Return to Home</button>
+    <script>
+        function loadHistory() {
+            const historyContainer = document.getElementById('historyContainer');
+            const history = JSON.parse(localStorage.getItem('scanHistory')) || [];
+            historyContainer.innerHTML = '';
+
+            if (history.length === 0) {
+                historyContainer.innerHTML = '<p>No scan history available.</p>';
+            } else {
+                history.forEach(barcode => {
+                    const productUrl = `https://world.openfoodfacts.org/product/${barcode}`;
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `<a href="${productUrl}" target="_blank">${barcode}</a>`;
+                    historyContainer.appendChild(historyItem);
+                });
+            }
+        }
+
+        function returnHome() {
+            window.location.href = 'https://viewer.pandasuite.com/w9EkSFtT';
+        }
+
+        // Load history on page load
+        window.onload = loadHistory;
+    </script>
+</body>
+</html>
